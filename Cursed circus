@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Nights at the Cursed Circus 3D</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050203;
+      color: #f3ece8;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    #threeContainer {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      z-index: 1;
+    }
+
+    #vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at center, rgba(0,0,0,0) 42%, rgba(12,0,2,0.76) 100%);
+      z-index: 5;
+    }
+
+    #sleepOverlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: #020102;
+      opacity: 0;
+      transition: opacity 0.2s linear;
+      z-index: 8;
+    }
+
+    #flashOverlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: #ffffff;
+      opacity: 0;
+      z-index: 9;
+    }
+
+    /* HUD Atas */
+    #hudTop {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .hud-box {
+      background: rgba(16, 6, 8, 0.85);
+      border: 1px solid rgba(220, 48, 48, 0.45);
+      border-radius: 10px;
+      padding: 8px 12px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
+    }
+
+    .time-title {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: #ff7b7b;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .clock-text {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff5f5;
+      line-height: 1.15;
+    }
+
+    .sub-stat {
+      font-size: 11px;
+      color: #d6c3be;
+      margin-top: 2px;
+    }
+
+    .meter-wrap {
+      width: 148px;
+      margin-top: 5px;
+    }
+
+    .meter-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      color: #f8d7b0;
+      margin-bottom: 2px;
+    }
+
+    .meter-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ff3b30, #ff9f0a, #ffd60a);
+      transition: width 0.15s linear;
+    }
+
+    /* Notifikasi Peringatan Tengah Atas */
+    #alertBanner {
+      position: fixed;
+      top: 78px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(120, 10, 18, 0.92);
+      border: 1px solid rgba(255, 90, 90, 0.75);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 22;
+      white-space: nowrap;
+      max-width: 92vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Kontrol Bawah */
+    #hudControls {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
+      pointer-events: none;
+      z-index: 25;
+    }
+
+    /* Joystick Virtual */
+    #joystickZone {
+      width: 118px;
+      height: 118px;
+      border-radius: 50%;
+      background: rgba(20, 10, 13, 0.72);
+      border: 2px solid rgba(255, 95, 95, 0.45);
+      position: relative;
+      pointer-events: auto;
+      touch-action: none;
+      flex-shrink: 0;
+    }
+
+    #joystickKnob {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff6b6b, #991b1b);
+      border: 2px solid rgba(255, 220, 220, 0.7);
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Tombol Aksi */
+    #actionPad {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(112px, 1fr));
+      gap: 8px;
+      pointer-events: auto;
+      max-width: 320px;
+    }
+
+    .act-btn {
+      appearance: none;
+      border: 1px solid rgba(255, 120, 120, 0.45);
+      background: rgba(24, 9, 13, 0.88);
+      color: #fff3f0;
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      touch-action: manipulation;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+      transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .act-btn:active {
+      transform: scale(0.96);
+    }
+
+    .act-btn.active {
+      background: rgba(155, 24, 34, 0.95);
+      border-color: #ff9b9b;
+      color: #ffffff;
+    }
+
+    .act-btn.coffee-btn {
+      border-color: rgba(255, 193, 94, 0.65);
+      background: rgba(45, 24, 8, 0.9);
+      color: #ffe6bd;
+    }
+
+    .act-btn.coffee-btn.ready {
+      background: rgba(168, 86, 12, 0.95);
+      border-color: #ffd166;
+      color: #fff;
+      animation: pulseGlow 1.1s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      from { box-shadow: 0 0 6px rgba(255, 190, 60, 0.35); }
+      to { box-shadow: 0 0 16px rgba(255, 190, 60, 0.85); }
+    }
+
+    /* Layar Menu / Game Over / Menang */
+    .screen-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(68, 8, 14, 0.92), rgba(7, 3, 5, 0.98));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+      overflow-y: auto;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: rgba(18, 7, 10, 0.95);
+      border: 1px solid rgba(235, 64, 64, 0.45);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #ff7b7b;
+      background: rgba(255, 60, 60, 0.14);
+      border: 1px solid rgba(255, 90, 90, 0.35);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.15;
+      color: #fff5f5;
+    }
+
+    p.desc {
+      margin: 0 0 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #dfd0cb;
+    }
+
+    .night-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .night-btn {
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 120, 120, 0.35);
+      background: rgba(34, 12, 17, 0.85);
+      color: #f4e6e2;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .night-btn.selected {
+      background: #9e1924;
+      border-color: #ff9c9c;
+      color: #ffffff;
+    }
+
+    .rules-list {
+      margin: 0 0 16px;
+      padding-left: 18px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: #e6d7d2;
+    }
+
+    .rules-list li {
+      margin-bottom: 5px;
+    }
+
+    .primary-btn {
+      width: 100%;
+      padding: 13px 16px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #c81e2b, #7f0d16);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      touch-action: manipulation;
+      box-shadow: 0 8px 24px rgba(200, 30, 43, 0.4);
+    }
+
+    .primary-btn:active {
+      transform: scale(0.98);
+    }
+
+    #endScreen {
+      display: none;
+    }
+
+    #statusNote {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #ffb4a2;
+      min-height: 16px;
+      text-align: center;
+    }
+
+    @media (max-width: 520px) {
+      .clock-text { font-size: 17px; }
+      .meter-wrap { width: 118px; }
+      #joystickZone { width: 102px; height: 102px; }
+      #joystickKnob { width: 42px; height: 42px; }
+      #actionPad { grid-template-columns: repeat(2, minmax(98px, 1fr)); gap: 6px; }
+      .act-btn { font-size: 10px; padding: 8px 7px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="threeContainer"></div>
+  <div id="vignette"></div>
+  <div id="sleepOverlay"></div>
+  <div id="flashOverlay"></div>
+
+  <!-- HUD Atas -->
+  <div id="hudTop">
+    <div class="hud-box">
+      <div class="time-title" id="nightLabel">MALAM 1 • SHIFT 11:00 PM - 06:30 AM</div>
+      <div class="clock-text" id="clockText">11:00 PM</div>
+      <div class="sub-stat" id="phaseText">1 Jam = 60 Detik • Bertahan s/d 06:30 AM</div>
+    </div>
+
+    <div class="hud-box">
+      <div class="meter-wrap" style="margin-top:0;">
+        <div class="meter-label">
+          <span>KOPI (TIAP 60 DETIK)</span>
+          <span id="coffeeTimerText">60s</span>
+        </div>
+        <div class="meter-bar">
+          <div class="meter-fill" id="coffeeBar"></div>
+        </div>
+      </div>
+
+      <div class="meter-wrap">
+        <div class="meter-label">
+          <span>STOK DAGING</span>
+          <span id="meatCountText">3/5</span>
+        </div>
+        <div class="meter-bar">
+          <div class="meter-fill" id="meatBar" style="background: linear-gradient(90deg, #b91c1c, #ef4444);"></div>
+        </div>
+      </div>
+
+      <div class="sub-stat" id="posStatusText">Posisi: Tengah Ruangan</div>
+    </div>
+  </div>
+
+  <div id="alertBanner">PERINGATAN!</div>
+
+  <!-- Kontrol Gerak & Aksi -->
+  <div id="hudControls">
+    <div id="joystickZone" aria-label="Joystick Gerak">
+      <div id="joystickKnob"></div>
+    </div>
+
+    <div id="actionPad">
+      <button type="button" class="act-btn" id="btnDoorLeft">🚪 PINTU KIRI: TERBUKA</button>
+      <button type="button" class="act-btn" id="btnFlashlight">🔦 SENTER: MATI</button>
+      <button type="button" class="act-btn" id="btnLookUp">⬆️ LIHAT ATAP</button>
+      <button type="button" class="act-btn" id="btnThrowMeat">🥩 LEMPAR DAGING</button>
+      <button type="button" class="act-btn" id="btnRefillMeat">🧊 AMBIL DAGING</button>
+      <button type="button" class="act-btn coffee-btn" id="btnDrinkCoffee">☕ MINUM KOPI</button>
+    </div>
+  </div>
+
+  <!-- Menu Utama -->
+  <div class="screen-overlay" id="startScreen">
+    <div class="card">
+      <div class="badge">SURVIVAL HOROR 3D • 3 MALAM</div>
+      <h1>NIGHTS AT THE CURSED CIRCUS 3D</h1>
+      <p class="desc">
+        Kamu adalah penjaga malam di sirkus terkutuk. Bergeraklah bebas di dalam ruang penjaga dari pukul <strong>11:00 PM</strong> sampai <strong>06:30 AM</strong> (<strong>1 jam = 60 detik</strong>).
+      </p>
+
+      <div class="night-row">
+        <button type="button" class="night-btn selected" data-night="1">MALAM 1</button>
+        <button type="button" class="night-btn" data-night="2">MALAM 2</button>
+        <button type="button" class="night-btn" data-night="3">MALAM 3</button>
+      </div>
+
+      <ul class="rules-list">
+        <li><strong>Monyet Sirkus (Tinggi 4,0m)</strong>: Datang dari <strong>koridor kiri</strong> memakai baju sirkus. <strong>Tutup pintu kiri</strong> sebelum ia menunduk masuk.</li>
+        <li><strong>Gajah Berkaki Laba-Laba & Bertaring</strong>: Merayap di <strong>langit-langit atas</strong> dan menjulurkan kaki laba-laba untuk menarikmu ke atas. <strong>Lihat ke atas</strong> lalu <strong>sorotkan senter</strong> ke arahnya!</li>
+        <li><strong>Singa Berkepala 3 (Tinggi 3,9m, Mata Banyak)</strong>: Berjalan 2 kaki dari <strong>depan</strong>. <strong>Lempar daging</strong> agar ia kembali ke tempatnya (ambil daging baru kapan saja).</li>
+        <li><strong>Kopi Tiap 1 Menit</strong>: Minum kopi setiap <strong>60 detik</strong> agar tidak tertidur lelap.</li>
+      </ul>
+
+      <button type="button" class="primary-btn" id="btnStartGame">▶ MULAI JAGA MALAM</button>
+      <div id="statusNote">Geser layar untuk menoleh • WASD / Panah / Joystick untuk berjalan</div>
+    </div>
+  </div>
+
+  <!-- Layar Menang / Kalah -->
+  <div class="screen-overlay" id="endScreen">
+    <div class="card">
+      <div class="badge" id="endBadge">SHIFT SELESAI</div>
+      <h1 id="endTitle">KAMU SELAMAT!</h1>
+      <p class="desc" id="endDesc">Pukul 06:30 AM telah tiba. Fajar menyingsing di atas tenda sirkus.</p>
+      <button type="button" class="primary-btn" id="btnRetry">↻ MAIN LAGI</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+    onerror="var s=document.createElement('script');s.src='https://unpkg.com/three@0.128.0/build/three.min.js';document.head.appendChild(s);"></script>
+
+  <script>
+    (function () {
+      'use strict';
+
+      let audioCtx = null;
+      function ensureAudio() {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+      }
+
+      function playTone(freq, type, duration, gainVal, slideFreq) {
+        if (!audioCtx) return;
+        try {
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type || 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now);
+          if (slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, now + duration);
+          gain.gain.setValueAtTime(gainVal || 0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.0008, now + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + duration);
+        } catch (_) {}
+      }
+
+      function playJumpscareSound() {
+        ensureAudio();
+        playTone(135, 'sawtooth', 0.85, 0.35, 540);
+        playTone(82, 'square', 0.85, 0.25, 38);
+      }
+
+      function playCoffeeSound() {
+        ensureAudio();
+        playTone(340, 'triangle', 0.14, 0.14, 520);
+        setTimeout(() => playTone(520, 'triangle', 0.18, 0.14, 680), 120);
+      }
+
+      function playMeatThrowSound() {
+        ensureAudio();
+        playTone(210, 'sine', 0.16, 0.16, 95);
+      }
+
+      function playDoorSound(closed) {
+        ensureAudio();
+        playTone(closed ? 140 : 190, 'square', 0.18, 0.16, closed ? 55 : 110);
+      }
+
+      function createSkinTextures(baseHex, veinHex, scarHex, roughBase) {
+        const size = 256;
+        const cMap = document.createElement('canvas');
+        cMap.width = cMap.height = size;
+        const ctxM = cMap.getContext('2d');
+
+        const cBump = document.createElement('canvas');
+        cBump.width = cBump.height = size;
+        const ctxB = cBump.getContext('2d');
+
+        ctxM.fillStyle = baseHex;
+        ctxM.fillRect(0, 0, size, size);
+
+        ctxB.fillStyle = '#808080';
+        ctxB.fillRect(0, 0, size, size);
+
+        for (let i = 0; i < 2400; i++) {
+          const x = Math.random() * size;
+          const y = Math.random() * size;
+          const r = 0.7 + Math.random() * 2.2;
+          const dark = Math.random() > 0.45;
+          ctxM.fillStyle = dark ? 'rgba(0,0,0,0.22)' : 'rgba(255,220,210,0.12)';
+          ctxM.beginPath();
+          ctxM.arc(x, y, r, 0, Math.PI * 2);
+          ctxM.fill();
+
+          ctxB.fillStyle = dark ? 'rgba(30,30,30,0.45)' : 'rgba(210,210,210,0.35)';
+          ctxB.beginPath();
+          ctxB.arc(x, y, r, 0, Math.PI * 2);
+          ctxB.fill();
+        }
+
+        ctxM.strokeStyle = veinHex;
+        ctxB.strokeStyle = '#383838';
+        for (let v = 0; v < 26; v++) {
+          let vx = Math.random() * size;
+          let vy = Math.random() * size;
+          ctxM.lineWidth = 0.9 + Math.random() * 1.8;
+          ctxB.lineWidth = 1.5;
+          ctxM.beginPath();
+          ctxB.beginPath();
+          ctxM.moveTo(vx, vy);
+          ctxB.moveTo(vx, vy);
+          for (let s = 0; s < 6; s++) {
+            vx += (Math.random() - 0.5) * 34;
+            vy += (Math.random() - 0.5) * 34;
+            ctxM.lineTo(vx, vy);
+            ctxB.lineTo(vx, vy);
+          }
+          ctxM.stroke();
+          ctxB.stroke();
+        }
+
+        if (scarHex) {
+          for (let k = 0; k < 14; k++) {
+            const sx = Math.random() * size;
+            const sy = Math.random() * size;
+            ctxM.fillStyle = scarHex;
+            ctxM.beginPath();
+            ctxM.ellipse(sx, sy, 6 + Math.random() * 16, 2 + Math.random() * 5, Math.random() * Math.PI, 0, Math.PI * 2);
+            ctxM.fill();
+          }
+        }
+
+        const map = new THREE.CanvasTexture(cMap);
+        const bumpMap = new THREE.CanvasTexture(cBump);
+        map.wrapS = map.wrapT = THREE.RepeatWrapping;
+        bumpMap.wrapS = bumpMap.wrapT = THREE.RepeatWrapping;
+        map.repeat.set(2, 2);
+        bumpMap.repeat.set(2, 2);
+
+        return {
+          map: map,
+          bumpMap: bumpMap,
+          bumpScale: 0.05,
+          roughness: roughBase || 0.72,
+          metalness: 0.08
+        };
+      }
+
+      let selectedNight = 1;
+      let gameRunning = false;
+      let gameEnded = false;
+      let elapsedShiftSec = 0;
+      const TOTAL_SHIFT_SEC = 7.5 * 60;
+
+      const player = {
+        x: 0,
+        z: 1.2,
+        yaw: 0,
+        pitch: 0.08,
+        speed: 3.1
+      };
+
+      const ROOM_BOUNDS = {
+        minX: -2.4,
+        maxX: 2.4,
+        minZ: -2.1,
+        maxZ: 2.3
+      };
+
+      let doorClosed = false;
+      let flashlightOn = false;
+      let coffeeTimer = 60.0;
+      const COFFEE_MAX = 60.0;
+      let meatCount = 3;
+      const MEAT_MAX = 5;
+
+      const monkey = {
+        progress: 0.0,
+        speed: 0.032,
+        group: null,
+        bodyGroup: null,
+        head: null,
+        leftArm: null,
+        rightArm: null,
+        leftLeg: null,
+        rightLeg: null
+      };
+
+      const spiderElephant = {
+        pullProgress: 0.0,
+        pullSpeed: 0.055,
+        exposedTimer: 0,
+        group: null,
+        body: null,
+        legs: []
+      };
+
+      const threeHeadLion = {
+        progress: 0.0,
+        speed: 0.028,
+        fedCooldown: 0,
+        group: null,
+        bodyGroup: null,
+        heads: [],
+        leftLeg: null,
+        rightLeg: null
+      };
+
+      const startScreen = document.getElementById('startScreen');
+      const endScreen = document.getElementById('endScreen');
+      const hudTop = document.getElementById('hudTop');
+      const hudControls = document.getElementById('hudControls');
+      const clockText = document.getElementById('clockText');
+      const nightLabel = document.getElementById('nightLabel');
+      const coffeeTimerText = document.getElementById('coffeeTimerText');
+      const coffeeBar = document.getElementById('coffeeBar');
+      const meatCountText = document.getElementById('meatCountText');
+      const meatBar = document.getElementById('meatBar');
+      const posStatusText = document.getElementById('posStatusText');
+      const alertBanner = document.getElementById('alertBanner');
+      const sleepOverlay = document.getElementById('sleepOverlay');
+      const flashOverlay = document.getElementById('flashOverlay');
+      const statusNote = document.getElementById('statusNote');
+
+      const btnDoorLeft = document.getElementById('btnDoorLeft');
+      const btnFlashlight = document.getElementById('btnFlashlight');
+      const btnLookUp = document.getElementById('btnLookUp');
+      const btnThrowMeat = document.getElementById('btnThrowMeat');
+      const btnRefillMeat = document.getElementById('btnRefillMeat');
+      const btnDrinkCoffee = document.getElementById('btnDrinkCoffee');
+
+      let alertTimeout = null;
+      function showAlert(msg) {
+        alertBanner.textContent = msg;
+        alertBanner.style.opacity = '1';
+        clearTimeout(alertTimeout);
+        alertTimeout = setTimeout(() => {
+          alertBanner.style.opacity = '0';
+        }, 1800);
+      }
+
+      document.querySelectorAll('.night-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.night-btn').forEach((b) => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedNight = parseInt(btn.getAttribute('data-night'), 10) || 1;
+        });
+      });
+
+      let scene = null;
+      let camera = null;
+      let renderer = null;
+      let spotLightFlash = null;
+      let doorMesh = null;
+      let thrownMeatMesh = null;
+      let thrownMeatLife = 0;
+      let sceneBuilt = false;
+
+      function initThreeIfNeeded() {
+        if (typeof THREE === 'undefined') {
+          statusNote.textContent = 'Memuat mesin 3D Three.js... coba ketuk mulai lagi sebentar lagi.';
+          return false;
+        }
+        if (sceneBuilt) return true;
+
+        try {
+          const container = document.getElementById('threeContainer');
+          scene = new THREE.Scene();
+          scene.background = new THREE.Color(0x070305);
+          scene.fog = new THREE.FogExp2(0x070305, 0.058);
+
+          camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 45);
+          camera.rotation.order = 'YXZ';
+
+          renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          renderer.shadowMap.enabled = true;
+          renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+          container.innerHTML = '';
+          container.appendChild(renderer.domElement);
+
+          const ambient = new THREE.AmbientLight(0x30171c, 0.95);
+          scene.add(ambient);
+
+          const ceilingLight = new THREE.PointLight(0xffb478, 1.55, 13);
+          ceilingLight.position.set(0, 3.85, -0.2);
+          ceilingLight.castShadow = true;
+          scene.add(ceilingLight);
+
+          const redCircusLight = new THREE.PointLight(0xff1e2d, 1.75, 13);
+          redCircusLight.position.set(-4.5, 2.5, 0);
+          scene.add(redCircusLight);
+
+          const frontEerieLight = new THREE.PointLight(0x9b4dff, 1.35, 13);
+          frontEerieLight.position.set(0, 2.4, -5.0);
+          scene.add(frontEerieLight);
+
+          spotLightFlash = new THREE.SpotLight(0xfff5d6, 0, 18, Math.PI / 3.8, 0.45, 1.15);
+          spotLightFlash.position.set(0, 0, 0);
+          const flashTarget = new THREE.Object3D();
+          flashTarget.position.set(0, 0, -5);
+          camera.add(spotLightFlash);
+          camera.add(flashTarget);
+          spotLightFlash.target = flashTarget;
+          scene.add(camera);
+
+          buildCircusRoom();
+          buildMonkey4m();
+          buildSpiderElephant();
+          buildThreeHeadLion39m();
+
+          window.addEventListener('resize', () => {
+            if (!renderer || !camera) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+          });
+
+          sceneBuilt = true;
+          return true;
+        } catch (err) {
+          statusNote.textContent = 'Error inisialisasi WebGL: ' + err.message;
+          return false;
+        }
+      }
+
+      function buildCircusRoom() {
+        const floorMat = new THREE.MeshStandardMaterial({
+          color: 0x261518,
+          roughness: 0.82,
+          metalness: 0.1
+        });
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        for (let i = -3; i <= 3; i++) {
+          const strip = new THREE.Mesh(
+            new THREE.BoxGeometry(0.18, 0.015, 12),
+            new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x6b0f18 : 0x1a1316, roughness: 0.8 })
+          );
+          strip.position.set(i * 1.1, 0.008, 0);
+          scene.add(strip);
+        }
+
+        const wallMat = new THREE.MeshStandardMaterial({
+          color: 0x1b0e12,
+          roughness: 0.88
+        });
+
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(7.2, 4.6, 0.3), wallMat);
+        backWall.position.set(0, 2.3, 3.2);
+        scene.add(backWall);
+
+        const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4.6, 7.0), wallMat);
+        rightWall.position.set(3.4, 2.3, 0);
+        scene.add(rightWall);
+
+        const meatBox = new THREE.Mesh(
+          new THREE.BoxGeometry(0.85, 0.95, 1.1),
+          new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.45, metalness: 0.5 })
+        );
+        meatBox.position.set(2.55, 0.48, -0.4);
+        meatBox.castShadow = true;
+        scene.add(meatBox);
+
+        const meatLabelSign = new THREE.Mesh(
+          new THREE.BoxGeometry(0.08, 0.28, 0.75),
+          new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x450a0a })
+        );
+        meatLabelSign.position.set(2.12, 0.72, -0.4);
+        scene.add(meatLabelSign);
+
+        const leftWallA = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4.6, 2.5), wallMat);
+        leftWallA.position.set(-3.4, 2.3, -2.15);
+        scene.add(leftWallA);
+
+        const leftWallB = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4.6, 2.4), wallMat);
+        leftWallB.position.set(-3.4, 2.3, 2.1);
+        scene.add(leftWallB);
+
+        const leftHeader = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.85, 2.0), wallMat);
+        leftHeader.position.set(-3.4, 3.68, 0.05);
+        scene.add(leftHeader);
+
+        doorMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.24, 2.75, 1.95),
+          new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.75, roughness: 0.35 })
+        );
+        doorMesh.position.set(-3.4, 4.1, 0.05);
+        scene.add(doorMesh);
+
+        const frontLower = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.05, 0.3), wallMat);
+        frontLower.position.set(0, 0.525, -3.1);
+        scene.add(frontLower);
+
+        const frontUpper = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.15, 0.3), wallMat);
+        frontUpper.position.set(0, 4.02, -3.1);
+        scene.add(frontUpper);
+
+        const frontLeftPillar = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.4, 0.3), wallMat);
+        frontLeftPillar.position.set(-2.7, 2.25, -3.1);
+        scene.add(frontLeftPillar);
+
+        const frontRightPillar = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.4, 0.3), wallMat);
+        frontRightPillar.position.set(2.7, 2.25, -3.1);
+        scene.add(frontRightPillar);
+
+        for (let b = -1.4; b <= 1.4; b += 0.7) {
+          const bar = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.035, 0.035, 2.4, 8),
+            new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 })
+          );
+          bar.position.set(b, 2.25, -3.1);
+          scene.add(bar);
+        }
+
+        const desk = new THREE.Mesh(
+          new THREE.BoxGeometry(1.5, 0.85, 0.9),
+          new THREE.MeshStandardMaterial({ color: 0x291716, roughness: 0.7 })
+        );
+        desk.position.set(0, 0.425, -0.4);
+        desk.castShadow = true;
+        scene.add(desk);
+
+        const mug = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.11, 0.1, 0.16, 12),
+          new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 })
+        );
+        mug.position.set(-0.35, 0.93, -0.35);
+        scene.add(mug);
+
+        const coffeeLiquid = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.092, 0.092, 0.03, 12),
+          new THREE.MeshStandardMaterial({ color: 0x3b1808, roughness: 0.15 })
+        );
+        coffeeLiquid.position.set(-0.35, 1.0, -0.35);
+        scene.add(coffeeLiquid);
+
+        for (let r = -2.5; r <= 2.5; r += 1.65) {
+          const beam = new THREE.Mesh(
+            new THREE.BoxGeometry(7.0, 0.16, 0.16),
+            new THREE.MeshStandardMaterial({ color: 0x271216, roughness: 0.75 })
+          );
+          beam.position.set(0, 4.65, r);
+          scene.add(beam);
+        }
+      }
+
+      function buildMonkey4m() {
+        const skin = createSkinTextures('#5c2d1c', 'rgba(130,20,25,0.65)', 'rgba(55,5,10,0.7)', 0.76);
+        const skinMat = new THREE.MeshStandardMaterial(skin);
+        const suitMat = new THREE.MeshStandardMaterial({
+          color: 0x8b0f1c,
+          roughness: 0.65,
+          metalness: 0.1
+        });
+        const goldMat = new THREE.MeshStandardMaterial({
+          color: 0xd99b26,
+          roughness: 0.35,
+          metalness: 0.6
+        });
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff1111 });
+
+        const root = new THREE.Group();
+        const body = new THREE.Group();
+        root.add(body);
+
+        const legGeo = new THREE.CylinderGeometry(0.22, 0.18, 1.45, 10);
+        const leftLeg = new THREE.Mesh(legGeo, suitMat);
+        leftLeg.position.set(-0.35, 0.72, 0);
+        const rightLeg = new THREE.Mesh(legGeo, suitMat);
+        rightLeg.position.set(0.35, 0.72, 0);
+        body.add(leftLeg, rightLeg);
+
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.48, 1.45, 12), suitMat);
+        torso.position.set(0, 2.05, 0);
+        torso.castShadow = true;
+        body.add(torso);
+
+        for (let y = 1.65; y <= 2.45; y += 0.4) {
+          const btn = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), goldMat);
+          btn.position.set(0.49, y, 0);
+          body.add(btn);
+        }
+
+        const armGeo = new THREE.CylinderGeometry(0.15, 0.12, 1.5, 10);
+        const leftArm = new THREE.Mesh(armGeo, skinMat);
+        leftArm.position.set(-0.68, 2.1, 0.25);
+        leftArm.rotation.x = -0.35;
+        const rightArm = new THREE.Mesh(armGeo, skinMat);
+        rightArm.position.set(0.68, 2.1, -0.25);
+        rightArm.rotation.x = 0.35;
+        body.add(leftArm, rightArm);
+
+        const head = new THREE.Group();
+        head.position.set(0, 3.15, 0);
+        body.add(head);
+
+        const skull = new THREE.Mesh(new THREE.SphereGeometry(0.46, 14, 14), skinMat);
+        skull.scale.set(1.05, 0.95, 1.15);
+        head.add(skull);
+
+        const earGeo = new THREE.SphereGeometry(0.2, 10, 10);
+        const earL = new THREE.Mesh(earGeo, skinMat);
+        earL.position.set(0, 0.05, -0.5);
+        const earR = new THREE.Mesh(earGeo, skinMat);
+        earR.position.set(0, 0.05, 0.5);
+        head.add(earL, earR);
+
+        const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), eyeMat);
+        eyeL.position.set(0.42, 0.1, -0.16);
+        const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), eyeMat);
+        eyeR.position.set(0.42, 0.1, 0.16);
+        head.add(eyeL, eyeR);
+
+        const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 16), suitMat);
+        hatBrim.position.set(0, 0.44, 0);
+        const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 0.42, 16), suitMat);
+        hatTop.position.set(0, 0.66, 0);
+        const hatBand = new THREE.Mesh(new THREE.CylinderGeometry(0.385, 0.385, 0.09, 16), goldMat);
+        hatBand.position.set(0, 0.52, 0);
+        head.add(hatBrim, hatTop, hatBand);
+
+        root.position.set(-7.6, 0, 0.05);
+        scene.add(root);
+
+        monkey.group = root;
+        monkey.bodyGroup = body;
+        monkey.head = head;
+        monkey.leftArm = leftArm;
+        monkey.rightArm = rightArm;
+        monkey.leftLeg = leftLeg;
+        monkey.rightLeg = rightLeg;
+      }
+
+      function buildSpiderElephant() {
+        const skin = createSkinTextures('#524b4e', 'rgba(130,20,25,0.65)', 'rgba(65,10,15,0.75)', 0.78);
+        const elephantMat = new THREE.MeshStandardMaterial(skin);
+        const legMat = new THREE.MeshStandardMaterial({
+          color: 0x26151c,
+          roughness: 0.55,
+          metalness: 0.25
+        });
+        const tuskMat = new THREE.MeshStandardMaterial({
+          color: 0xf5ecd8,
+          roughness: 0.25,
+          metalness: 0.1
+        });
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff2a55 });
+
+        const root = new THREE.Group();
+        const body = new THREE.Group();
+        body.position.set(0, 4.35, -0.35);
+        root.add(body);
+
+        const torso = new THREE.Mesh(new THREE.SphereGeometry(1.12, 16, 14), elephantMat);
+        torso.scale.set(1.0, 0.85, 1.35);
+        body.add(torso);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.75, 14, 12), elephantMat);
+        head.position.set(0, -0.25, -1.22);
+        body.add(head);
+
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.12, 1.45, 10), elephantMat);
+        trunk.position.set(0, -0.85, -1.52);
+        trunk.rotation.x = 0.25;
+        body.add(trunk);
+
+        const tuskGeo = new THREE.ConeGeometry(0.14, 1.45, 10);
+        const tuskL = new THREE.Mesh(tuskGeo, tuskMat);
+        tuskL.position.set(-0.42, -0.85, -1.52);
+        tuskL.rotation.x = 2.65;
+        const tuskR = new THREE.Mesh(tuskGeo, tuskMat);
+        tuskR.position.set(0.42, -0.85, -1.52);
+        tuskR.rotation.x = 2.65;
+        body.add(tuskL, tuskR);
+
+        const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.095, 8, 8), eyeMat);
+        eyeL.position.set(-0.35, -0.35, -1.85);
+        const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.095, 8, 8), eyeMat);
+        eyeR.position.set(0.35, -0.35, -1.85);
+        body.add(eyeL, eyeR);
+
+        const legs = [];
+        for (let i = 0; i < 8; i++) {
+          const side = i % 2 === 0 ? -1 : 1;
+          const zOff = -1.0 + Math.floor(i / 2) * 0.65;
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.025, 2.3, 8), legMat);
+          leg.position.set(side * 0.95, -0.85, zOff);
+          leg.rotation.z = side * 0.35;
+          body.add(leg);
+          legs.push({ mesh: leg, side: side, phase: i * 0.8 });
+        }
+
+        scene.add(root);
+        spiderElephant.group = root;
+        spiderElephant.body = body;
+        spiderElephant.legs = legs;
+      }
+
+      function buildThreeHeadLion39m() {
+        const skin = createSkinTextures('#7c441e', 'rgba(140,25,20,0.65)', 'rgba(65,10,12,0.7)', 0.72);
+        const lionSkinMat = new THREE.MeshStandardMaterial(skin);
+        const maneMat = new THREE.MeshStandardMaterial({
+          color: 0x2b120b,
+          roughness: 0.9
+        });
+        const spiderEyeMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+
+        const root = new THREE.Group();
+        const body = new THREE.Group();
+        root.add(body);
+
+        const legGeo = new THREE.CylinderGeometry(0.25, 0.19, 1.55, 10);
+        const leftLeg = new THREE.Mesh(legGeo, lionSkinMat);
+        leftLeg.position.set(-0.42, 0.78, 0);
+        const rightLeg = new THREE.Mesh(legGeo, lionSkinMat);
+        rightLeg.position.set(0.42, 0.78, 0);
+        body.add(leftLeg, rightLeg);
+
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.48, 1.55, 12), lionSkinMat);
+        torso.position.set(0, 2.25, 0);
+        torso.castShadow = true;
+        body.add(torso);
+
+        const armGeo = new THREE.CylinderGeometry(0.18, 0.14, 1.35, 10);
+        const leftArm = new THREE.Mesh(armGeo, lionSkinMat);
+        leftArm.position.set(-0.82, 2.2, 0.15);
+        leftArm.rotation.x = -0.25;
+        const rightArm = new THREE.Mesh(armGeo, lionSkinMat);
+        rightArm.position.set(0.82, 2.2, 0.15);
+        rightArm.rotation.x = -0.25;
+        body.add(leftArm, rightArm);
+
+        const heads = [];
+        const headConfigs = [
+          { x: 0, y: 3.35, z: 0.15, scale: 1.0 },
+          { x: -0.62, y: 3.15, z: 0.0, scale: 0.85 },
+          { x: 0.62, y: 3.15, z: 0.0, scale: 0.85 }
+        ];
+
+        headConfigs.forEach((cfg, idx) => {
+          const hGroup = new THREE.Group();
+          hGroup.position.set(cfg.x, cfg.y, cfg.z);
+          hGroup.scale.setScalar(cfg.scale);
+
+          const mane = new THREE.Mesh(new THREE.DodecahedronGeometry(0.52, 1), maneMat);
+          hGroup.add(mane);
+
+          const snout = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.34, 0.48), lionSkinMat);
+          snout.position.set(0, -0.05, 0.38);
+          hGroup.add(snout);
+
+          const eyeOffsets = [
+            [-0.18, 0.16, 0.45], [0.18, 0.16, 0.45],
+            [-0.26, 0.04, 0.42], [0.26, 0.04, 0.42],
+            [-0.12, 0.25, 0.40], [0.12, 0.25, 0.40],
+            [0, 0.2, 0.48]
+          ];
+          eyeOffsets.forEach((eo) => {
+            const spEye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 6), spiderEyeMat);
+            spEye.position.set(eo[0], eo[1], eo[2]);
+            hGroup.add(spEye);
+          });
+
+          body.add(hGroup);
+          heads.push({ mesh: hGroup, phase: idx * 1.4 });
+        });
+
+        root.position.set(0, 0, -8.2);
+        scene.add(root);
+
+        threeHeadLion.group = root;
+        threeHeadLion.bodyGroup = body;
+        threeHeadLion.heads = heads;
+        threeHeadLion.leftLeg = leftLeg;
+        threeHeadLion.rightLeg = rightLeg;
+      }
+
+      const keys = {};
+      window.addEventListener('keydown', (e) => {
+        keys[e.code] = true;
+        if (!gameRunning || gameEnded) return;
+        if (e.code === 'KeyF') toggleFlashlight();
+        if (e.code === 'KeyC') toggleDoorLeft();
+        if (e.code === 'KeyQ') drinkCoffee();
+        if (e.code === 'KeyE') throwMeat();
+        if (e.code === 'KeyR') refillMeat();
+        if (e.code === 'KeyU') lookAtCeiling();
+      });
+      window.addEventListener('keyup', (e) => {
+        keys[e.code] = false;
+      });
+
+      let lookDragging = false;
+      let lastLookX = 0;
+      let lastLookY = 0;
+      const containerEl = document.getElementById('threeContainer');
+
+      containerEl.addEventListener('pointerdown', (e) => {
+        if (!gameRunning || gameEnded) return;
+        lookDragging = true;
+        lastLookX = e.clientX;
+        lastLookY = e.clientY;
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!lookDragging || !gameRunning || gameEnded) return;
+        const dx = e.clientX - lastLookX;
+        const dy = e.clientY - lastLookY;
+        lastLookX = e.clientX;
+        lastLookY = e.clientY;
+
+        player.yaw -= dx * 0.0055;
+        player.pitch = Math.max(-0.65, Math.min(1.25, player.pitch - dy * 0.0045));
+      });
+
+      window.addEventListener('pointerup', () => {
+        lookDragging = false;
+      });
+
+      const joyZone = document.getElementById('joystickZone');
+      const joyKnob = document.getElementById('joystickKnob');
+      let joyActive = false;
+      let joyCenter = { x: 0, y: 0 };
+      const joyVec = { x: 0, y: 0 };
+
+      joyZone.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        joyActive = true;
+        const rect = joyZone.getBoundingClientRect();
+        joyCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        updateJoystick(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!joyActive) return;
+        updateJoystick(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('pointerup', () => {
+        if (!joyActive) return;
+        joyActive = false;
+        joyVec.x = 0;
+        joyVec.y = 0;
+        joyKnob.style.transform = 'translate(-50%, -50%)';
+      });
+
+      function updateJoystick(cx, cy) {
+        const maxR = 38;
+        let dx = cx - joyCenter.x;
+        let dy = cy - joyCenter.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > maxR) {
+          dx = (dx / dist) * maxR;
+          dy = (dy / dist) * maxR;
+        }
+        joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        joyVec.x = dx / maxR;
+        joyVec.y = dy / maxR;
+      }
+
+      function toggleDoorLeft() {
+        ensureAudio();
+        doorClosed = !doorClosed;
+        playDoorSound(doorClosed);
+        btnDoorLeft.textContent = doorClosed ? '🚪 PINTU KIRI: TERTUTUP' : '🚪 PINTU KIRI: TERBUKA';
+        btnDoorLeft.classList.toggle('active', doorClosed);
+        showAlert(doorClosed ? '🚪 Pintu kiri ditutup!' : '🚪 Pintu kiri dibuka.');
+      }
+
+      function toggleFlashlight() {
+        ensureAudio();
+        flashlightOn = !flashlightOn;
+        playTone(flashlightOn ? 920 : 520, 'sine', 0.05, 0.08);
+        btnFlashlight.textContent = flashlightOn ? '🔦 SENTER: NYALA' : '🔦 SENTER: MATI';
+        btnFlashlight.classList.toggle('active', flashlightOn);
+      }
+
+      function lookAtCeiling() {
+        ensureAudio();
+        player.pitch = 1.12;
+        if (!flashlightOn) {
+          flashlightOn = true;
+          btnFlashlight.textContent = '🔦 SENTER: NYALA';
+          btnFlashlight.classList.add('active');
+        }
+        if (camera) {
+          camera.rotation.x = player.pitch;
+        }
+        showAlert('⬆️ Pandangan & senter diarahkan ke atas!');
+      }
+
+      function throwMeat() {
+        ensureAudio();
+        if (meatCount <= 0) {
+          showAlert('Stok daging habis! Tekan AMBIL DAGING.');
+          return;
+        }
+        meatCount -= 1;
+        playMeatThrowSound();
+        updateMetersUI();
+
+        if (scene) {
+          if (!thrownMeatMesh) {
+            thrownMeatMesh = new THREE.Mesh(
+              new THREE.DodecahedronGeometry(0.24, 0),
+              new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.45 })
+            );
+            scene.add(thrownMeatMesh);
+          }
+          thrownMeatMesh.position.set(player.x * 0.35, 0.35, -3.6);
+          thrownMeatLife = 2.4;
+        }
+
+        threeHeadLion.progress = Math.max(0.0, threeHeadLion.progress - 0.65);
+        threeHeadLion.fedCooldown = 4.5;
+        showAlert('🥩 Daging dilempar! Singa 3 Kepala mundur memakan daging.');
+      }
+
+      function refillMeat() {
+        ensureAudio();
+        if (meatCount >= MEAT_MAX) {
+          showAlert('Stok daging sudah penuh!');
+          return;
+        }
+        meatCount = MEAT_MAX;
+        playCoffeeSound();
+        updateMetersUI();
+        showAlert('🧊 Stok daging terisi penuh (' + MEAT_MAX + '/' + MEAT_MAX + ')!');
+      }
+
+      function drinkCoffee() {
+        ensureAudio();
+        coffeeTimer = COFFEE_MAX;
+        playCoffeeSound();
+        updateMetersUI();
+        showAlert('☕ Kopi diminum! Mata kembali segar untuk 60 detik.');
+      }
+
+      btnDoorLeft.addEventListener('click', toggleDoorLeft);
+      btnFlashlight.addEventListener('click', toggleFlashlight);
+      btnLookUp.addEventListener('click', lookAtCeiling);
+      btnThrowMeat.addEventListener('click', throwMeat);
+      btnRefillMeat.addEventListener('click', refillMeat);
+      btnDrinkCoffee.addEventListener('click', drinkCoffee);
+
+      function formatShiftClock(secElapsed) {
+        const hoursFloat = Math.min(7.5, secElapsed / 60.0);
+        const totalMinutes = 23 * 60 + Math.floor(hoursFloat * 60);
+        const h24 = Math.floor(totalMinutes / 60) % 24;
+        const mins = totalMinutes % 60;
+        const ampm = h24 >= 12 ? 'PM' : 'AM';
+        let h12 = h24 % 12;
+        if (h12 === 0) h12 = 12;
+        const mm = mins < 10 ? '0' + mins : '' + mins;
+        return `${h12}:${mm} ${ampm}`;
+      }
+
+      function updateMetersUI() {
+        const cPct = Math.max(0, Math.min(100, (coffeeTimer / COFFEE_MAX) * 100));
+        coffeeBar.style.width = cPct + '%';
+        coffeeTimerText.textContent = Math.max(0, Math.ceil(coffeeTimer)) + 's';
+        btnDrinkCoffee.classList.toggle('ready', coffeeTimer <= 20);
+
+        const mPct = Math.max(0, Math.min(100, (meatCount / MEAT_MAX) * 100));
+        meatBar.style.width = mPct + '%';
+        meatCountText.textContent = meatCount + '/' + MEAT_MAX;
+      }
+
+      function triggerGameOver(reason, jumpscareTarget) {
+        if (gameEnded) return;
+        gameEnded = true;
+        gameRunning = false;
+        playJumpscareSound();
+
+        if (jumpscareTarget && camera) {
+          camera.position.set(0, 1.65, 0.3);
+          camera.rotation.set(jumpscareTarget === 'elephant' ? 0.95 : 0, jumpscareTarget === 'monkey' ? Math.PI / 2 : 0, 0);
+          if (jumpscareTarget === 'monkey' && monkey.group) {
+            monkey.group.position.set(-1.35, 0, 0.3);
+            if (monkey.bodyGroup) {
+              monkey.bodyGroup.rotation.z = -0.35;
+              monkey.bodyGroup.position.y = -0.35;
+            }
+          } else if (jumpscareTarget === 'elephant' && spiderElephant.body) {
+            spiderElephant.body.position.set(0, 3.1, -0.6);
+          } else if (jumpscareTarget === 'lion' && threeHeadLion.group) {
+            threeHeadLion.group.position.set(0, 0, -1.35);
+          }
+          if (renderer && scene) renderer.render(scene, camera);
+        }
+
+        flashOverlay.style.background = '#b91c1c';
+        flashOverlay.style.opacity = '0.72';
+        setTimeout(() => { flashOverlay.style.opacity = '0'; }, 260);
+
+        hudTop.style.display = 'none';
+        hudControls.style.display = 'none';
+
+        setTimeout(() => {
+          document.getElementById('endBadge').textContent = 'KAMU TEWAS • MALAM ' + selectedNight;
+          document.getElementById('endTitle').textContent = 'MALAPETAKA SIRKUS';
+          document.getElementById('endDesc').textContent = reason;
+          endScreen.style.display = 'flex';
+        }, jumpscareTarget ? 550 : 80);
+      }
+
+      function triggerWin() {
+        if (gameEnded) return;
+        gameEnded = true;
+        gameRunning = false;
+        hudTop.style.display = 'none';
+        hudControls.style.display = 'none';
+        document.getElementById('endBadge').textContent = 'SHIFT SELESAI • MALAM ' + selectedNight;
+        document.getElementById('endTitle').textContent = 'SELAMAT SAMPAI 06:30 AM!';
+        document.getElementById('endDesc').textContent =
+          'Cahaya pagi menembus tenda sirkus. Kamu berhasil bertahan melewati teror Malam ' + selectedNight + '!';
+        endScreen.style.display = 'flex';
+      }
+
+      function resetGameState() {
+        elapsedShiftSec = 0;
+        gameEnded = false;
+        coffeeTimer = COFFEE_MAX;
+        meatCount = 3;
+        doorClosed = false;
+        flashlightOn = false;
+
+        player.x = 0;
+        player.z = 1.2;
+        player.yaw = 0;
+        player.pitch = 0.08;
+
+        monkey.progress = 0.0;
+        spiderElephant.pullProgress = 0.0;
+        spiderElephant.exposedTimer = 0;
+        threeHeadLion.progress = 0.0;
+        threeHeadLion.fedCooldown = 0;
+
+        if (thrownMeatMesh && scene) {
+          scene.remove(thrownMeatMesh);
+          thrownMeatMesh = null;
+        }
+        thrownMeatLife = 0;
+
+        sleepOverlay.style.opacity = '0';
+        btnDoorLeft.textContent = '🚪 PINTU KIRI: TERBUKA';
+        btnDoorLeft.classList.remove('active');
+        btnFlashlight.textContent = '🔦 SENTER: MATI';
+        btnFlashlight.classList.remove('active');
+        nightLabel.textContent = `MALAM ${selectedNight} • SHIFT 11:00 PM - 06:30 AM`;
+        updateMetersUI();
+      }
+
+      function startGame() {
+        ensureAudio();
+        const ready = initThreeIfNeeded();
+        if (!ready) return;
+
+        resetGameState();
+        startScreen.style.display = 'none';
+        endScreen.style.display = 'none';
+        hudTop.style.display = 'flex';
+        hudControls.style.display = 'flex';
+        gameRunning = true;
+        showAlert('Shift dimulai! Pantau Kiri (Monyet), Atas (Gajah), Depan (Singa), & Kopi!');
+      }
+
+      document.getElementById('btnStartGame').addEventListener('click', startGame);
+      document.getElementById('btnRetry').addEventListener('click', startGame);
+
+      let lastTime = performance.now();
+
+      function updateSimulation(dt, nowSec) {
+        elapsedShiftSec += dt;
+        clockText.textContent = formatShiftClock(elapsedShiftSec);
+
+        if (elapsedShiftSec >= TOTAL_SHIFT_SEC) {
+          triggerWin();
+          return;
+        }
+
+        coffeeTimer -= dt;
+        if (coffeeTimer <= 0) {
+          triggerGameOver('Kamu tertidur lelap karena tidak meminum kopi tepat waktu!', null);
+          return;
+        }
+
+        if (coffeeTimer < 18) {
+          const drowsiness = Math.min(0.68, ((18 - coffeeTimer) / 18) * 0.68);
+          sleepOverlay.style.opacity = (drowsiness + Math.sin(nowSec * 5) * 0.06).toFixed(2);
+        } else {
+          sleepOverlay.style.opacity = '0';
+        }
+
+        let moveForward = -joyVec.y;
+        let moveRight = joyVec.x;
+        if (keys['KeyW'] || keys['ArrowUp']) moveForward += 1;
+        if (keys['KeyS'] || keys['ArrowDown']) moveForward -= 1;
+        if (keys['KeyD'] || keys['ArrowRight']) moveRight += 1;
+        if (keys['KeyA'] || keys['ArrowLeft']) moveRight -= 1;
+
+        const len = Math.hypot(moveForward, moveRight);
+        if (len > 0.01) {
+          moveForward /= Math.max(1, len);
+          moveRight /= Math.max(1, len);
+
+          const sinY = Math.sin(player.yaw);
+          const cosY = Math.cos(player.yaw);
+
+          const forwardX = -sinY;
+          const forwardZ = -cosY;
+          const rightX = cosY;
+          const rightZ = -sinY;
+
+          player.x += (forwardX * moveForward + rightX * moveRight) * player.speed * dt;
+          player.z += (forwardZ * moveForward + rightZ * moveRight) * player.speed * dt;
+
+          player.x = Math.max(ROOM_BOUNDS.minX, Math.min(ROOM_BOUNDS.maxX, player.x));
+          player.z = Math.max(ROOM_BOUNDS.minZ, Math.min(ROOM_BOUNDS.maxZ, player.z));
+        }
+
+        posStatusText.textContent = `Posisi: (${player.x.toFixed(1)}, ${player.z.toFixed(1)})`;
+
+        if (doorMesh) {
+          const targetDoorY = doorClosed ? 1.38 : 4.1;
+          doorMesh.position.y += (targetDoorY - doorMesh.position.y) * Math.min(1, dt * 10);
+        }
+
+        if (spotLightFlash) {
+          spotLightFlash.intensity = flashlightOn ? 3.5 : 0;
+        }
+
+        if (thrownMeatMesh && thrownMeatLife > 0) {
+          thrownMeatLife -= dt;
+          thrownMeatMesh.position.z -= dt * 0.6;
+          thrownMeatMesh.rotation.x += dt * 4;
+          if (thrownMeatLife <= 0) {
+            scene.remove(thrownMeatMesh);
+            thrownMeatMesh = null;
+          }
+        }
+
+        const nightMult = 1 + (selectedNight - 1) * 0.28;
+
+        // 1) MONYET SIRKUS (4.0m) DARI KIRI
+        monkey.progress += monkey.speed * nightMult * dt;
+        const monkeyX = -7.6 + monkey.progress * 4.4;
+        let crouchFactor = 0;
+
+        if (monkey.progress > 0.58) {
+          crouchFactor = Math.min(1, (monkey.progress - 0.58) / 0.35);
+        }
+
+        if (monkey.group) {
+          monkey.group.position.set(monkeyX, 0, 0.05);
+          const stride = Math.sin(nowSec * 9) * 0.35;
+          if (monkey.leftLeg) monkey.leftLeg.rotation.z = stride;
+          if (monkey.rightLeg) monkey.rightLeg.rotation.z = -stride;
+          if (monkey.leftArm) monkey.leftArm.rotation.z = -stride * 0.7;
+          if (monkey.rightArm) monkey.rightArm.rotation.z = stride * 0.7;
+
+          if (monkey.bodyGroup) {
+            monkey.bodyGroup.rotation.z = -crouchFactor * 0.75;
+            monkey.bodyGroup.position.y = -crouchFactor * 0.82;
+          }
+          if (monkey.head) {
+            monkey.head.rotation.z = crouchFactor * 0.45;
+            monkey.head.rotation.y = Math.sin(nowSec * 4) * 0.18;
+          }
+        }
+
+        if (monkey.progress >= 1.0) {
+          if (doorClosed) {
+            monkey.progress = 0.05;
+            showAlert('🚪 Pintu kiri tertutup! Monyet Sirkus mundur ke kejauhan.');
+          } else {
+            triggerGameOver('Monyet Sirkus setinggi 4 meter menunduk masuk lewat pintu kiri yang terbuka!', 'monkey');
+            return;
+          }
+        }
+
+        // 2) GAJAH BERKAKI LABA-LABA DI ATAS (+Y)
+        spiderElephant.pullProgress += spiderElephant.pullSpeed * nightMult * 0.65 * dt;
+
+        const liftOffset = spiderElephant.pullProgress > 0.55 ? (spiderElephant.pullProgress - 0.55) * 3.4 : 0;
+        if (camera) {
+          camera.position.set(player.x, 1.62 + liftOffset, player.z);
+          camera.rotation.y = player.yaw;
+          camera.rotation.x = player.pitch;
+        }
+
+        const lookingUp = player.pitch > 0.55;
+        const shiningAtElephant = flashlightOn && lookingUp;
+
+        if (shiningAtElephant) {
+          spiderElephant.exposedTimer += dt;
+          spiderElephant.pullProgress = Math.max(0, spiderElephant.pullProgress - dt * 0.48);
+          if (spiderElephant.exposedTimer > 0.55) {
+            spiderElephant.exposedTimer = 0;
+            showAlert('🔦 Senter mengenai Gajah Laba-Laba di atas! Ia menarik kakinya kembali.');
+          }
+        } else {
+          spiderElephant.exposedTimer = 0;
+        }
+
+        if (spiderElephant.body) {
+          const descent = spiderElephant.pullProgress * 2.1;
+          spiderElephant.body.position.y = 4.35 - descent;
+          spiderElephant.body.position.x = Math.sin(nowSec * 1.6) * 0.55;
+          spiderElephant.body.position.z = -0.35 + Math.cos(nowSec * 1.3) * 0.45;
+
+          spiderElephant.legs.forEach((lg) => {
+            lg.mesh.rotation.x = Math.sin(nowSec * 8 + lg.phase) * 0.25;
+            lg.mesh.position.y = -0.85 - spiderElephant.pullProgress * 0.65;
+          });
+        }
+
+        if (spiderElephant.pullProgress >= 1.0) {
+          triggerGameOver('Gajah berkaki laba-laba & bertaring tajam menarikmu ke atap sirkus!', 'elephant');
+          return;
+        }
+
+        // 3) SINGA BERKEPALA 3 (3.9m, 2 KAKI MANUSIA) DARI DEPAN (-Z)
+        if (threeHeadLion.fedCooldown > 0) {
+          threeHeadLion.fedCooldown -= dt;
+        } else {
+          threeHeadLion.progress += threeHeadLion.speed * nightMult * dt;
+        }
+
+        const lionZ = -8.2 + threeHeadLion.progress * 4.5;
+        if (threeHeadLion.group) {
+          threeHeadLion.group.position.set(Math.sin(nowSec * 1.2) * 0.4, 0, lionZ);
+          const walkSwing = Math.sin(nowSec * 7.5) * 0.42;
+          if (threeHeadLion.leftLeg) threeHeadLion.leftLeg.rotation.x = walkSwing;
+          if (threeHeadLion.rightLeg) threeHeadLion.rightLeg.rotation.x = -walkSwing;
+          if (threeHeadLion.bodyGroup) {
+            threeHeadLion.bodyGroup.position.y = Math.abs(Math.cos(nowSec * 7.5)) * 0.08;
+          }
+          threeHeadLion.heads.forEach((h) => {
+            h.mesh.rotation.y = Math.sin(nowSec * 3.5 + h.phase) * 0.22;
+            h.mesh.rotation.x = Math.cos(nowSec * 4.2 + h.phase) * 0.12;
+          });
+        }
+
+        if (threeHeadLion.progress >= 1.0) {
+          triggerGameOver('Singa berkepala 3 bermata banyak menerobos dari depan karena kelaparan!', 'lion');
+          return;
+        }
+
+        updateMetersUI();
+      }
+
+      function renderLoop(now) {
+        requestAnimationFrame(renderLoop);
+        const dt = Math.min(0.08, (now - lastTime) / 1000);
+        lastTime = now;
+
+        if (gameRunning && !gameEnded) {
+          updateSimulation(dt, now / 1000);
+        }
+
+        if (renderer && scene && camera) {
+          renderer.render(scene, camera);
+        }
+      }
+
+      requestAnimationFrame(renderLoop);
+    })();
+  </script>
+</body>
+</html>
